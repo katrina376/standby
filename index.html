@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1" />
+  <meta charset="utf-8" />
+  <meta name="author" content="Hao-Yung Chan" />
+  <meta name="description" content="A stand-by view with music" />
+
+  <title>Stand By Meet</title>
+  <style>
+  html, body, div, section, form, fieldset {
+    display: block;
+    position: relative;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0 auto;
+    width: 100vw;
+    height: 100vh;
+    min-width: 720px;
+  }
+
+  main {
+    width: 100%;
+    height: 100%;
+  }
+
+  canvas {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  main > form {
+    margin: 0 auto;
+    width: 80%;
+    min-width: 720px;
+    padding: 1em 0;
+  }
+
+  main > form > fieldset:not(:first-of-type) {
+    margin-top: 0.5em;
+  }
+
+  main > * {
+    display: none;
+  }
+
+  main[d-on=setting] > form {
+    display: block;
+  }
+
+  main[d-on=launch] > div {
+    display: block;
+  }
+
+  fieldset {
+    display: grid;
+    grid-template-columns: 14em 1fr;
+    gap: 0.5em;
+  }
+
+  fieldset > label {
+    text-align: right;
+    padding: 4px 3px;
+  }
+
+  input, textarea {
+    font-size: 1em;
+    font-family: inherit;
+  }
+
+  button {
+    font-size: 1em;
+    background-color: #005eb8;
+    color: #fff;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+  }
+
+  #preview {
+    margin-top: 1em;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+  }
+
+  #preview div {
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  #preview canvas {
+    outline: 2px solid #005eb8;
+  }
+
+  a {
+    position: absolute;
+    display: block;
+    right: 1em;
+    bottom: 1em;
+    width: 2em;
+    height: 2em;
+    border-radius: 50%;
+    background-color: #005eb8;
+    border: 0.5em #005eb8 solid;
+  }
+
+  a.disabled {
+    background-color: #999;
+    border: 0.5em #999 solid;
+    cursor: not-allowed;
+  }
+
+  a[href="#setting"] {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.802 489.802" xml:space="preserve"><path fill="%23FFF" d="m20.701 281.901 32.1.2c4.8 24.7 14.3 48.7 28.7 70.5l-22.8 22.6c-8.2 8.1-8.2 21.2-.2 29.4l24.6 24.9c8.1 8.2 21.2 8.2 29.4.2l22.8-22.6c21.6 14.6 45.5 24.5 70.2 29.5l-.2 32.1c-.1 11.5 9.2 20.8 20.7 20.9l35 .2c11.5.1 20.8-9.2 20.9-20.7l.2-32.1c24.7-4.8 48.7-14.3 70.5-28.7l22.6 22.8c8.1 8.2 21.2 8.2 29.4.2l24.9-24.6c8.2-8.1 8.2-21.2.2-29.4l-22.6-22.8c14.6-21.6 24.5-45.5 29.5-70.2l32.1.2c11.5.1 20.8-9.2 20.9-20.7l.2-35c.1-11.5-9.2-20.8-20.7-20.9l-32.1-.2c-4.8-24.7-14.3-48.7-28.7-70.5l22.8-22.6c8.2-8.1 8.2-21.2.2-29.4l-24.6-24.9c-8.1-8.2-21.2-8.2-29.4-.2l-22.8 22.6c-21.6-14.6-45.5-24.5-70.2-29.5l.2-32.1c.1-11.5-9.2-20.8-20.7-20.9l-35-.2c-11.5-.1-20.8 9.2-20.9 20.7l-.3 32.1c-24.8 4.8-48.8 14.3-70.5 28.7l-22.6-22.8c-8.1-8.2-21.2-8.2-29.4-.2l-24.8 24.6c-8.2 8.1-8.2 21.2-.2 29.4l22.6 22.8c-14.6 21.6-24.5 45.5-29.5 70.2l-32.1-.2c-11.5-.1-20.8 9.2-20.9 20.7l-.2 35c-.1 11.4 9.2 20.8 20.7 20.9zm158.6-103.3c36.6-36.2 95.5-35.9 131.7.7s35.9 95.5-.7 131.7-95.5 35.9-131.7-.7-35.9-95.5.7-131.7z"/></svg>');
+  }
+
+  a[href="#launch"] {
+    background-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.143 7H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3.786M19 5h-4m4 0v4m0-4L9 15" stroke="%23FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+  }
+  </style>
+</head>
+
+<body>
+
+<main>
+  <div>
+    <canvas id="full"></canvas>
+    <a id="setting" href="#setting"></a>
+  </div>
+  <form>
+    <fieldset>
+      <label for="fg">Text Color</label>
+      <input
+        type="text"
+        id="fg"
+        name="fg"
+        placeholder="e.g., #000, black; default black"
+        />
+    </fieldset>
+    <fieldset>
+      <label for="bg">Background Color</label>
+      <input
+        type="text"
+        id="bg"
+        name="bg"
+        placeholder="e.g., #FFF, white; default white"
+        />
+    </fieldset>
+    <fieldset>
+      <label for="video">YouTube ID</label>
+      <input
+        type="text"
+        id="video"
+        name="video"
+        placeholder="e.g., dQw4w9WgXcQ"
+        />
+    </fieldset>
+    <fieldset>
+      <label for="note">Note to show</label>
+      <textarea
+        id="note"
+        name="note"
+        placeholder="What you want to show on the screen"
+        rows="3"
+        ></textarea>
+    </fieldset>
+    <fieldset>
+      <label for="cover">
+        Or select a cover
+        <button type="button" id="remove-cover">Reset</button>
+      </label>
+      <input
+        type="file"
+        id="cover"
+        name="cover"
+        accept="image/png, image/jpeg"
+        />
+    </fieldset>
+    <div id="preview">
+      <div>
+        <canvas></canvas>
+      </div>
+      <div>
+        <div id="player"></div>
+      </div>
+    </div>
+    <a id="launch" href="#launch" class="disabled"></a>
+  </form>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const emptyFallback = (value, fallback = '') => (!!value) ? value : fallback;
+
+const DEFAULT = Object.freeze({
+  NOTE: 'Hello world',
+  BG: 'white',
+  FG: 'black',
+  YT_ID: 'dQw4w9WgXcQ',
+})
+
+const PREFILLS = [
+  'fg',
+  'bg',
+  'video',
+  'note',
+];
+
+
+const LW = 1.5;
+const SF = 1.2;
+
+const container = $('main');
+const fullCanvas = $('canvas#full');
+const previewCanvas = $('#preview canvas');
+
+/* Load YouTube IFrame API */
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+const firstScript = document.getElementsByTagName('script')[0];
+firstScript.parentNode.insertBefore(tag, firstScript);
+
+let player;
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player('player', {
+    height: 225,
+    width: 360,
+    videoId: DEFAULT.YT_ID,
+    playerVars: {
+      'playsinline': 1
+    },
+    events: {
+      'onReady': onPlayerReady,
+      'onStateChange': onPlayerStateChange,
+    },
+  });
+}
+
+function onPlayerReady() {
+  $('a#launch').className = '';
+}
+
+function onPlayerStateChange(evt) {
+  if (evt.target.getVideoData().isPlayable) {
+    $('a#launch').className = '';
+  } else {
+    $('a#launch').className = 'disabled';
+  }
+
+  if (evt.data === YT.PlayerState.ENDED) {
+    evt.target.seekTo(0);
+    evt.target.playVideo();
+  }
+}
+
+function write(canvas, text) {
+  const ctx = canvas.getContext('2d', { alpha: false });
+  ctx.fillStyle = canvas.style.backgroundColor || DEFAULT.BG;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = canvas.style.color || DEFAULT.FG;
+
+  let lines = text.trim().split('\n');
+
+  let size = parseInt(canvas.height / Math.max(lines.length, 1));
+  let mW, mH;
+
+  do {
+    ctx.font = `${size}px sans`;
+    mW = Math.max(...lines.map(e => ctx.measureText(e).width));
+    mH = size * LW * (lines.length - 1) + size;
+    size *= 0.9;
+  } while ((mW > canvas.width * 0.8) || (mH > canvas.height * 0.8));
+
+  const padding = (canvas.height - mH) / 2 * 0.9;
+  lines.forEach(function(e, i) {
+    ctx.fillText(e, canvas.width / 2, size + (i * size * LW) + padding);
+  });
+}
+
+function draw(canvas, base64) {
+  const ctx = canvas.getContext('2d', { alpha: false });
+  ctx.fillStyle = canvas.style.backgroundColor || DEFAULT.BG;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  let image = new Image();
+  image.src = base64;
+  image.onload = function() {
+    let x, y, w, h;
+    if ((image.width / image.height) > (canvas.width / canvas.height)) {
+      w = canvas.width;
+      h = image.height / image.width * w;
+      x = 0;
+      y = (canvas.height - h) / 2;
+    } else {
+      h = canvas.height;
+      w = image.width / image.height * h;
+      x = (canvas.width - w) / 2;
+      y = 0;
+    }
+    ctx.drawImage(image, x, y, w, h);
+  };
+}
+
+function renderCanvas(canvas) {
+  const data = new FormData($('form'));
+  canvas.style.color = emptyFallback(data.get('fg'), DEFAULT.FG);
+  canvas.style.backgroundColor = emptyFallback(data.get('bg'), DEFAULT.BG);
+
+  if (data.get('cover').size > 0) {
+    loadImage(data.get('cover'))
+      .then(base64 => draw(canvas, base64));
+  } else {
+    write(canvas, emptyFallback(data.get('note'), DEFAULT.NOTE));
+  }
+}
+
+function setView() {
+  if (window.location.hash === '#launch') {
+    container.setAttribute('d-on', 'launch');
+    sizeFullCanvas();
+    renderCanvas(fullCanvas);
+
+    if ((!!player) && player.getVideoData().isPlayable) {
+      player.playVideo();
+    }
+  } else {
+    container.setAttribute('d-on', 'setting');
+    sizePreviewCanvas();
+    renderCanvas(previewCanvas);
+
+    if ((!!player) && player.getVideoData().isPlayable) {
+      player.pauseVideo();
+    }
+  }
+}
+
+function loadSetting() {
+  let url = new URL(window.location);
+  let params = url.searchParams;
+
+  PREFILLS.forEach(function(item) {
+    $(`#${item}`).value = emptyFallback(params.get(item)).trim();
+  });
+
+  setView();
+  player.cueVideoById($(`#video`).value || DEFAULT.YT_ID);
+}
+
+function getWindowSize() {
+  return [
+    parseInt(window.innerWidth),
+    parseInt(window.innerHeight),
+  ];
+}
+
+function sizeFullCanvas() {
+  const [ wW, wH ] = getWindowSize();
+  fullCanvas.width = wW * SF;
+  fullCanvas.height = wH * SF;
+}
+
+function sizePreviewCanvas() {
+  const [ wW, wH ] = getWindowSize();
+
+  const preview = previewCanvas.parentNode;
+  let { width: pW } = window.getComputedStyle(preview);
+  pW = parseInt(pW);
+
+  const pH = parseInt((pW / wW) * wH);
+  preview.style.height = `${pH}px`;
+
+  previewCanvas.width = pW * SF;
+  previewCanvas.height = pH * SF;
+}
+
+async function loadImage(f) {
+  return new Promise(function(res, rej) {
+    const fileReader = new FileReader();
+    fileReader.readAsDataURL(f);
+    fileReader.onload = () => res(fileReader.result);
+    fileReader.onerror = err => rej(err);
+  });
+}
+
+window.addEventListener('load', loadSetting);
+window.addEventListener('resize', setView);
+window.addEventListener('hashchange', setView);
+
+$('a#launch').addEventListener('click', function(evt) {
+  if (evt.target.classList.contains('disabled')) {
+    evt.preventDefault();
+  }
+});
+
+$('form').addEventListener('input', function(evt) {
+  console.log('form.addEventListener');
+  renderCanvas(previewCanvas);
+});
+
+$('#remove-cover').addEventListener('click', function(evt) {
+  $('#cover').value = '';
+  renderCanvas(previewCanvas);
+});
+
+$('#video').addEventListener('input', function(evt) {
+  player.cueVideoById(evt.target.value || DEFAULT.YT_ID);
+});
+
+</script>
+</body>
+</html>
