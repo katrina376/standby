@@ -8,7 +8,7 @@
 
   <title>Stand By Meet</title>
   <style>
-  html, body, div, section, form, fieldset {
+  html, body, div, section, form, fieldset, footer {
     display: block;
     position: relative;
     border: 0;
@@ -48,14 +48,22 @@
 
   main > * {
     display: none;
+    max-height: 100%;
   }
 
-  main[d-on=setting] > form {
+  main:not([d-on=launch]) > form {
     display: block;
   }
 
   main[d-on=launch] > div {
     display: block;
+  }
+
+  footer {
+    position: absolute;
+    width: max-content;
+    right: 1em;
+    bottom: 1em;
   }
 
   fieldset {
@@ -91,19 +99,40 @@
 
   #preview div {
     height: 100%;
-    display: flex;
-    align-items: center;
   }
 
   #preview canvas {
     outline: 2px solid #005eb8;
   }
 
-  a {
-    position: absolute;
-    display: block;
-    right: 1em;
-    bottom: 1em;
+  #modal {
+    display: none;
+
+    background-color: #000000AA;
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  #modal > div {
+    width: 20em;
+    background-color: #fff;
+    padding: 1em 2em;
+    text-align: center;
+    border-radius: 5px;
+  }
+
+  main[d-on=link] #modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  a.button {
+    display: inline-block;
+    position: relative;
     width: 2em;
     height: 2em;
     border-radius: 50%;
@@ -111,10 +140,27 @@
     border: 0.5em #005eb8 solid;
   }
 
-  a.disabled {
+  a.button.disabled {
     background-color: #999;
     border: 0.5em #999 solid;
     cursor: not-allowed;
+  }
+
+  a.button > span {
+    display: none;
+    position: absolute;
+    z-index: 1;
+    color: #fff;
+    background-color: #333333AA;
+    padding: 4px 6px;
+    font-size: 80%;
+    width: 100px;
+    right: 95%;
+    bottom: 95%;
+  }
+
+  a.button:hover > span {
+    display: inline;
   }
 
   a[href="#setting"] {
@@ -124,6 +170,10 @@
   a[href="#launch"] {
     background-image: url('data:image/svg+xml,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.143 7H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3.786M19 5h-4m4 0v4m0-4L9 15" stroke="%23FFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
   }
+
+  a[href="#link"] {
+    background-image: url('data:image/svg+xml,<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path fill="%23FFF" d="M385 464q-28 0-46-19-19-19-19-46 0-9 1-11l-150-85q-17 17-42 17-27 0-46-19t-19-46q0-26 19-44 19-19 46-19 25 0 42 17l150-84q-1-3-1-14 0-26 19-44 18-19 45-19 26 0 45 19 18 18 19 44 0 27-19 46t-45 19q-23 0-43-17l-150 85q1 2 1 11 0 10-1 13l150 85q20-17 44-17 30 0 46 19t16 45q0 26-16 45t-46 19Z"/></svg>');
+  }
   </style>
 </head>
 
@@ -132,7 +182,11 @@
 <main>
   <div>
     <canvas id="full"></canvas>
-    <a id="setting" href="#setting"></a>
+    <footer>
+      <a class="button" id="setting" href="#setting">
+        <span>Stop playing the music and return to the settings</span>
+      </a>
+    </footer>
   </div>
   <form>
     <fieldset>
@@ -191,7 +245,20 @@
         <div id="player"></div>
       </div>
     </div>
-    <a id="launch" href="#launch" class="disabled"></a>
+    <footer>
+      <a class="button" id="link" href="#link">
+        <span>Export the current settings as a URL</span>
+      </a>
+      <a class="button disabled" id="launch" href="#launch">
+        <span>Launch the view and start playing the music</span>
+      </a>
+    </footer>
+    <div id="modal">
+      <div>
+        <span></span><br />
+        <a href="#setting">Close</a>
+      </div>
+    </div>
   </form>
 </main>
 
@@ -244,14 +311,14 @@ function onYouTubeIframeAPIReady() {
 }
 
 function onPlayerReady() {
-  $('a#launch').className = '';
+  $('a#launch').classList.remove('disabled');
 }
 
 function onPlayerStateChange(evt) {
   if (evt.target.getVideoData().isPlayable) {
-    $('a#launch').className = '';
+    $('a#launch').classList.remove('disabled');
   } else {
-    $('a#launch').className = 'disabled';
+    $('a#launch').classList.add('disabled');
   }
 
   if (evt.data === YT.PlayerState.ENDED) {
@@ -333,12 +400,22 @@ function setView() {
       player.playVideo();
     }
   } else {
-    container.setAttribute('d-on', 'setting');
     sizePreviewCanvas();
     renderCanvas(previewCanvas);
 
     if ((!!player) && player.getVideoData().isPlayable) {
       player.pauseVideo();
+    }
+
+    if (window.location.hash === '#link') {
+      container.setAttribute('d-on', 'link');
+
+      let data = [...new FormData($('form')).entries()]
+        .filter(([key, value]) => (PREFILLS.indexOf(key) > -1) && (!!value))
+      let qs = new URLSearchParams(data).toString();
+      $('#modal span').innerText = `${window.location.origin}${window.location.pathname}?${qs}`;
+    } else {
+      container.setAttribute('d-on', 'setting');
     }
   }
 }
