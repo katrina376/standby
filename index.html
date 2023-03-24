@@ -400,6 +400,8 @@ function setView() {
       player.playVideo();
     }
   } else {
+    container.setAttribute('d-on', (window.location.hash === '#link') ? 'link' : 'settings');
+
     sizePreviewCanvas();
     renderCanvas(previewCanvas);
 
@@ -408,14 +410,10 @@ function setView() {
     }
 
     if (window.location.hash === '#link') {
-      container.setAttribute('d-on', 'link');
-
       let data = [...new FormData($('form')).entries()]
         .filter(([key, value]) => (PREFILLS.indexOf(key) > -1) && (!!value))
       let qs = new URLSearchParams(data).toString();
       $('#modal span').innerText = `${window.location.origin}${window.location.pathname}?${qs}`;
-    } else {
-      container.setAttribute('d-on', 'setting');
     }
   }
 }
@@ -479,7 +477,6 @@ $('a#launch').addEventListener('click', function(evt) {
 });
 
 $('form').addEventListener('input', function(evt) {
-  console.log('form.addEventListener');
   renderCanvas(previewCanvas);
 });
 
